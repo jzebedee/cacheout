@@ -103,7 +103,7 @@ namespace CacheOut
             try
             {
                 hNewThread = Imports.CreateRemoteThread(hProc, IntPtr.Zero, 0, pTarget, pParam, 0, IntPtr.Zero);
-                if (Imports.WaitForSingleObject(hNewThread, 2000) != (uint)ThreadWaitValue.Object0)
+                if (Imports.WaitForSingleObject(hNewThread, (uint)ThreadWaitValue.Infinite) != (uint)ThreadWaitValue.Object0)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
                 IntPtr hModule;
