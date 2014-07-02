@@ -11,7 +11,7 @@ namespace CacheOut.Win32
     /// </summary>
     public static class Imports
     {
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32")]
         public static extern int ResumeThread(IntPtr hThread);
 
         #region Process
@@ -24,7 +24,7 @@ namespace CacheOut.Win32
         /// <param name="dwProcessId">Unique process ID of process to open</param>
         /// <returns>Returns a handle to opened process if successful or <see cref="IntPtr.Zero"/> if unsuccessful.
         /// Use <see cref="Marshal.GetLastWin32Error" /> to get Win32 Error on failure</returns>
-        [DllImport("kernel32.dll", EntryPoint = "OpenProcess", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "OpenProcess", SetLastError = true)]
         public static extern IntPtr OpenProcess(
             ProcessAccessFlags dwDesiredAccess,
             [MarshalAs(UnmanagedType.Bool)] 
@@ -34,7 +34,7 @@ namespace CacheOut.Win32
         /// <summary>
         /// Creates a new process and its primary thread. The new process runs in the security context of the calling process.
         /// </summary>
-        /// <param name="lpApplicationName">The name of the module to be executed. The string can specify the full path and file name of hte module to execute
+        /// <param name="lpApplicationName">The name of the module to be executed. The string can specify the full path and file name of the module to execute
         /// or it can specify a partial name.</param>
         /// <param name="lpCommandLine">The command line to be executed.</param>
         /// <param name="lpProcessAttributes">A pointer to a SECURITY_ATTRIBUTES structure that determines whether the returned handle to the new process object can be inherited by child processes. If lpProcessAttributes is <see cref="IntPtr.Zero"/>, the handle cannot be inherited.</param>
@@ -46,7 +46,7 @@ namespace CacheOut.Win32
         /// <param name="lpStartupInfo">A pointer to a <see cref="STARTUPINFO"/> structure.</param>
         /// <param name="lpProcessInformation">A pointer to a <see cref="PROCESS_INFORMATION"/> structure that receives identification information about the new process.</param>
         /// <returns>If the function succeeds, the return value is true. If the function fails, the return value is false. Call <see cref="Marshal.GetLastWin32Error"/> to get the Win32 Error.</returns>
-        [DllImport("kernel32.dll", EntryPoint = "CreateProcessW", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "CreateProcessW", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateProcessW(
             [MarshalAs(UnmanagedType.LPWStr)]
@@ -76,7 +76,7 @@ namespace CacheOut.Win32
         /// </param>
         /// <returns>If the function succeeds, a handle to the module is returned. 
         /// Otherwise, <see cref="IntPtr.Zero"/> is returned. Call <see cref="Marshal.GetLastWin32Error"/> on failure to get Win32 error.</returns>
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryW", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "LoadLibraryW", SetLastError = true)]
         public static extern IntPtr LoadLibrary(string lpFileName);
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace CacheOut.Win32
         /// <param name="dwFlags">The action to be taken when loading the module. If no flags are specified, the behaviour is identical to <see cref="LoadLibrary"/>.
         /// The parameter can be one of the values defined in <see cref="LoadLibraryExFlags"/></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryExW", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "LoadLibraryExW", SetLastError = true)]
         public static extern IntPtr LoadLibraryEx(
             [MarshalAs(UnmanagedType.LPWStr)]
             string lpFileName,
@@ -101,7 +101,7 @@ namespace CacheOut.Win32
         /// </summary>
         /// <param name="hModule">Handle to the loaded library to free</param>
         /// <returns>True if the function succeeds, otherwise false. Call <see cref="Marshal.GetLastWin32Error"/> on failure to get Win32 error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool FreeLibrary(IntPtr hModule);
 
@@ -110,7 +110,7 @@ namespace CacheOut.Win32
         /// </summary>
         /// <param name="lpModuleName">The name of the loaded module.</param>
         /// <returns>If the function succeeds, a handle to the module is returned. Otherwise, <see cref="IntPtr.Zero"/> is returned. Call <see cref="Marshal.GetLastWin32Error"/> on failure to get last Win32 error</returns>
-        [DllImport("kernel32.dll", EntryPoint = "GetModuleHandleW", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "GetModuleHandleW", SetLastError = true)]
         public static extern IntPtr GetModuleHandle(
             [MarshalAs(UnmanagedType.LPWStr)] string lpModuleName);
 
@@ -120,7 +120,7 @@ namespace CacheOut.Win32
         /// <param name="hModule">Handle to the Dll module that contains the exported function</param>
         /// <param name="procName">The function name.</param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
 
@@ -139,7 +139,7 @@ namespace CacheOut.Win32
         /// <param name="dwCreationFlags">The flags that control the creation of the thread</param>
         /// <param name="lpThreadId">A pointer to a variable that receives the thread identifier. If this parameter is <see cref="IntPtr.Zero"/>, the thread identifier is not returned.</param>
         /// <returns>If the function succeeds, the return value is a handle to the new thread. If the function fails, the return value is <see cref="IntPtr.Zero"/>. Call <see cref="Marshal.GetLastWin32Error"/> to get Win32 Error.</returns>
-        [DllImport("kernel32.dll", EntryPoint = "CreateRemoteThread", SetLastError = true)]
+        [DllImport("kernel32", EntryPoint = "CreateRemoteThread", SetLastError = true)]
         public static extern IntPtr CreateRemoteThread(
             IntPtr hProcess,
             IntPtr lpThreadAttributes,
@@ -164,7 +164,7 @@ namespace CacheOut.Win32
         /// <param name="hThread">Handle to the thread</param>
         /// <param name="lpExitCode">A pointer to a variable to receive the thread termination status. If this works properly, this should be the return value from the thread function of <see cref="CreateRemoteThread"/></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetExitCodeThread(IntPtr hThread, out IntPtr lpExitCode);
 
@@ -174,7 +174,7 @@ namespace CacheOut.Win32
         /// <param name="hThread">Handle to the thread</param>
         /// <param name="lpExitCode">A pointer to a variable to receive the thread termination status. If this works properly, this should be the return value from the thread function of <see cref="CreateRemoteThread"/></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
 
@@ -188,7 +188,7 @@ namespace CacheOut.Win32
         /// </summary>
         /// <param name="hObject">Object handle to close</param>
         /// <returns>True if success, false if failure. Use <see cref="Marshal.GetLastWin32Error"/> on failure to get Win32 error.</returns>
-        [DllImport("kernel32.dll", EntryPoint = "CloseHandle")]
+        [DllImport("kernel32", EntryPoint = "CloseHandle")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CloseHandle(IntPtr hObject);
 
@@ -212,7 +212,7 @@ namespace CacheOut.Win32
         /// <param name="flProtect">One of <see cref="MemoryProtection"/> constants.</param>
         /// <returns>If the function succeeds, the return value is the base address of the allocated region of pages.
         /// If the function fails, the return value is <see cref="IntPtr.Zero"/>. Call <see cref="Marshal.GetLastWin32Error"/> to get Win32 error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
         public static extern IntPtr VirtualAllocEx(
             IntPtr hProcess,
             IntPtr lpAddress,
@@ -234,7 +234,7 @@ namespace CacheOut.Win32
         /// <param name="dwFreeType">The type of free operation. This parameter can be one of the following values: 
         /// <see cref="AllocationType.Decommit"/> or <see cref="AllocationType.Release"/></param>
         /// <returns>If the function is successful, it returns true. If the function fails, it returns false. Call <see cref="Marshal.GetLastWin32Error"/> to get Win32 error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool VirtualFreeEx(
             IntPtr hProcess,
@@ -252,7 +252,7 @@ namespace CacheOut.Win32
         /// <param name="dwSize">The number of bytes to be read</param>
         /// <param name="lpNumberOfBytesRead">The number of bytes read into the specified buffer</param>
         /// <returns>If the function succeeds, it returns true. Otherwise, false is returned and calling <see cref="Marshal.GetLastWin32Error"/> will retrieve the error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool ReadProcessMemory(
             IntPtr hProcess,
@@ -271,7 +271,7 @@ namespace CacheOut.Win32
         /// <param name="dwSize">The number of bytes to be read</param>
         /// <param name="lpNumberOfBytesRead">The number of bytes read into the specified buffer</param>
         /// <returns>If the function succeeds, it returns true. Otherwise, false is returned and calling <see cref="Marshal.GetLastWin32Error"/> will retrieve the error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool ReadProcessMemory(
             IntPtr hProcess,
@@ -290,7 +290,7 @@ namespace CacheOut.Win32
         /// <param name="nSize">The number of bytes to write</param>
         /// <param name="lpNumberOfBytesWritten">The number of bytes written.</param>
         /// <returns>If the function succeeds, it returns true. Otherwise false is returned and calling <see cref="Marshal.GetLastWin32Error"/> will retrieve the error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteProcessMemory(
             IntPtr hProcess,
@@ -309,7 +309,7 @@ namespace CacheOut.Win32
         /// <param name="nSize">The number of bytes to write</param>
         /// <param name="lpNumberOfBytesWritten">The number of bytes written.</param>
         /// <returns>If the function succeeds, it returns true. Otherwise false is returned and calling <see cref="Marshal.GetLastWin32Error"/> will retrieve the error.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteProcessMemory(
             IntPtr hProcess,

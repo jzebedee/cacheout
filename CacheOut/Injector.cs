@@ -13,7 +13,7 @@ namespace CacheOut
 {
     static class Injector
     {
-        static bool Inject(Process targetProc, string payload, string export)
+        public static bool Inject(Process targetProc, string payload, string export)
         {
             if (!File.Exists(payload))
                 throw new FileNotFoundException("Payload '" + payload + "' does not exist");
@@ -56,10 +56,12 @@ namespace CacheOut
             var libPathSize = (uint)Encoding.Unicode.GetByteCount(payload);
 
             IntPtr
-                pLibPath = Marshal.StringToHGlobalUni(payload),
+                pLibPath = IntPtr.Zero,
                 pExternLibPath = IntPtr.Zero;
             try
             {
+                pLibPath = Marshal.StringToHGlobalUni(payload);
+
                 var hKernel = Imports.GetModuleHandle("kernel32");
                 var pLoadLib = Imports.GetProcAddress(hKernel, "LoadLibraryW");
 
@@ -68,25 +70,22 @@ namespace CacheOut
                 int bytesWritten;
                 Imports.WriteProcessMemory(hTarget, pExternLibPath, pLibPath, libPathSize, out bytesWritten);
 
-                IntPtr
-                    pLibBase,
-                    hMod = CRTWithWait(hTarget, pLoadLib, pExternLibPath);
+                IntPtr hMod = CRTWithWait(hTarget, pLoadLib, pExternLibPath);
                 if (hMod == IntPtr.Zero)
-                    pLibBase = (from ProcessModule module in targetProc.Modules
-                                where module.ModuleName.Equals(payloadName)
-                                select module)
+                    hMod = (from ProcessModule module in targetProc.Modules
+                            where module.ModuleName.Equals(payloadName)
+                            select module)
                     .Single().BaseAddress;
-                else
-                    pLibBase = hMod;
 
-                var oHost = FindExportRVA(payload, export).ToInt32();
-                CRTWithWait(hTarget, pLibBase + oHost, pExternLibPath);
+                var oHost = FindExportRVA(payload, export);
+                CRTWithWait(hTarget, hMod + (int)oHost, pExternLibPath);
 
-                return pLibBase;
+                return hMod;
             }
             finally
             {
-                Marshal.FreeHGlobal(pLibPath);
+                if (pLibPath != IntPtr.Zero)
+                    Marshal.FreeHGlobal(pLibPath);
                 Imports.VirtualFreeEx(hTarget, pExternLibPath, 0, AllocationType.Release);
             }
         }
@@ -98,25 +97,24 @@ namespace CacheOut
             CRTWithWait(hTarget, pFreeLib, pLibBase);
         }
 
-        static IntPtr CRTWithWait(IntPtr handle, IntPtr pTarget, IntPtr pParam)
+        static IntPtr CRTWithWait(IntPtr hProc, IntPtr pTarget, IntPtr pParam)
         {
-            var hThread = IntPtr.Zero;
+            var hNewThread = IntPtr.Zero;
             try
             {
-                hThread = Imports.CreateRemoteThread(handle, IntPtr.Zero, 0, pTarget, pParam, 0, IntPtr.Zero);
-                if (Imports.WaitForSingleObject(hThread, (uint)ThreadWaitValue.Infinite) != (uint)ThreadWaitValue.Object0)
-                    return IntPtr.Zero;
-                //throw new Win32Exception(Marshal.GetLastWin32Error());
-
-                IntPtr hLibModule;
-                if (!Imports.GetExitCodeThread(hThread, out hLibModule))
+                hNewThread = Imports.CreateRemoteThread(hProc, IntPtr.Zero, 0, pTarget, pParam, 0, IntPtr.Zero);
+                if (Imports.WaitForSingleObject(hNewThread, 2000) != (uint)ThreadWaitValue.Object0)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                return hLibModule;
+                IntPtr hModule;
+                if (!Imports.GetExitCodeThread(hNewThread, out hModule))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+
+                return hModule;
             }
             finally
             {
-                Imports.CloseHandle(hThread);
+                Imports.CloseHandle(hNewThread);
             }
         }
 
@@ -133,7 +131,7 @@ namespace CacheOut
                 if (pFunc == IntPtr.Zero)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                return pFunc - hModule.ToInt32();
+                return IntPtr.Subtract(pFunc, (int)hModule);
             }
             finally
             {
