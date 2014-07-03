@@ -15,7 +15,8 @@ namespace CachePayload
         [DllExport]
         public static void HookIAT([MarshalAs(UnmanagedType.LPWStr)]string path)
         {
-            for (uint i = 0x25; i < 0x7FFF; i++)
+            for (uint i = 0x25; i < 0x50; i++)
+            // for (uint i = 0x25; i < 0x7FFF; i++)
             {
                 Beep(i, 50);
             }
