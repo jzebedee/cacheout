@@ -7,13 +7,13 @@ using DllExporter;
 
 namespace CachePayload
 {
-    public static class HookManager
+    public static class Test
     {
         [DllImport("kernel32", SetLastError = true)]
         static extern bool Beep(uint dwFreq, uint dwDuration);
 
         [DllExport]
-        public static void HookIAT([MarshalAs(UnmanagedType.LPWStr)]string path)
+        public static void Test([MarshalAs(UnmanagedType.LPWStr)]string dummy)
         {
             for (uint i = 0x25; i < 0x50; i++)
             // for (uint i = 0x25; i < 0x7FFF; i++)
