@@ -11,36 +11,72 @@ using CacheOut.Win32;
 
 namespace CacheOut
 {
-    static class Injector
+    class Injector : IDisposable
     {
-        public static bool Inject(Process targetProc, string payload, string export)
+        private readonly Process _targetProc;
+        private readonly Dictionary<string, IntPtr> _injectedModules = new Dictionary<string, IntPtr>();
+
+        private IntPtr hProc;
+
+        public Injector(Process targetProc)
+        {
+            this._targetProc = targetProc;
+        }
+        ~Injector()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (hProc != IntPtr.Zero)
+            {
+                foreach (var kvp in _injectedModules)
+                {
+                    var hModule = kvp.Value;
+                    EjectInternal(hProc, hModule);
+                }
+            }
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public bool Inject(string payload)
         {
             if (!File.Exists(payload))
                 throw new FileNotFoundException("Payload '" + payload + "' does not exist");
 
+            var moduleName = Path.GetFileName(payload);
+            if (_injectedModules.ContainsKey(moduleName))
+                throw new InvalidOperationException("The same payload cannot be injected again without first ejecting");
+
             bool success = false;
 
-            IntPtr
-                pLibBase = IntPtr.Zero,
-                hProc = IntPtr.Zero;
+            IntPtr hModule = IntPtr.Zero;
             try
             {
                 Process.EnterDebugMode();
 
-                hProc = Imports.OpenProcess(
-                    ProcessAccessFlags.QueryInformation | ProcessAccessFlags.CreateThread |
-                    ProcessAccessFlags.VMOperation | ProcessAccessFlags.VMWrite |
-                    ProcessAccessFlags.VMRead, false, targetProc.Id);
+                if (hProc == IntPtr.Zero)
+                    hProc = Imports.OpenProcess(
+                        ProcessAccessFlags.QueryInformation | ProcessAccessFlags.CreateThread |
+                        ProcessAccessFlags.VMOperation | ProcessAccessFlags.VMWrite |
+                        ProcessAccessFlags.VMRead, false, _targetProc.Id);
+
                 if (hProc == IntPtr.Zero)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                pLibBase = InjectInternal(hProc, targetProc, payload, export);
+                payload = Path.GetFullPath(payload);
+                hModule = InjectInternal(hProc, _targetProc, payload);
             }
             finally
             {
-                if (pLibBase != IntPtr.Zero && hProc != IntPtr.Zero)
+                if (hModule != IntPtr.Zero)
                 {
-                    Eject(hProc, pLibBase);
+                    _injectedModules.Add(moduleName, hModule);
                     success = true;
                 }
 
@@ -50,54 +86,102 @@ namespace CacheOut
             return success;
         }
 
-        private static IntPtr InjectInternal(IntPtr hTarget, Process targetProc, string payload, string export)
+        public void Eject(string moduleName)
         {
-            var payloadName = Path.GetFileName(payload);
-            var libPathSize = (uint)Encoding.Unicode.GetByteCount(payload);
+            IntPtr hModule;
+            if (!_injectedModules.TryGetValue(moduleName, out hModule))
+                throw new InvalidOperationException("A module with this name was not injected");
 
-            IntPtr
-                pLibPath = IntPtr.Zero,
-                pExternLibPath = IntPtr.Zero;
+            EjectInternal(hProc, hModule);
+            _injectedModules.Remove(moduleName);
+        }
+
+        public IntPtr Call(string moduleName, string export, string param)
+        {
+            IntPtr hModule;
+            if (!_injectedModules.TryGetValue(moduleName, out hModule))
+                throw new InvalidOperationException("A module with this name was not injected");
+
+            IntPtr pExternParam = IntPtr.Zero;
             try
             {
-                pLibPath = Marshal.StringToHGlobalUni(payload);
+                pExternParam = WriteExternalString(hProc, param);
+
+                var oHost = FindExportRVA(moduleName, export);
+                return CRTWithWait(hProc, hModule + (int)oHost, pExternParam);
+            }
+            finally
+            {
+                if (pExternParam != IntPtr.Zero)
+                    FreeExternal(hProc, pExternParam);
+            }
+        }
+
+        private static IntPtr WriteExternalString(IntPtr hProc, string str)
+        {
+            var strSize = (uint)Encoding.Unicode.GetByteCount(str);
+
+            IntPtr
+                pStr = IntPtr.Zero,
+                pExternStr = IntPtr.Zero;
+
+            try
+            {
+                pStr = Marshal.StringToHGlobalUni(str);
+
+                pExternStr = Imports.VirtualAllocEx(hProc, IntPtr.Zero, strSize, AllocationType.Commit, MemoryProtection.ReadWrite);
+
+                int bytesWritten;
+                Imports.WriteProcessMemory(hProc, pExternStr, pStr, strSize, out bytesWritten);
+
+                Debug.Assert(bytesWritten == strSize);
+                return pExternStr;
+            }
+            finally
+            {
+                if (pStr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(pStr);
+            }
+        }
+
+        private static void FreeExternal(IntPtr hProc, IntPtr pFree)
+        {
+            if (pFree == IntPtr.Zero)
+                throw new ArgumentException("pFree cannot be zero");
+
+            Imports.VirtualFreeEx(hProc, pFree, 0, AllocationType.Release);
+        }
+
+        private static IntPtr InjectInternal(IntPtr hProc, Process targetProc, string payload)
+        {
+            var pExternPayloadStr = IntPtr.Zero;
+            try
+            {
+                pExternPayloadStr = WriteExternalString(hProc, payload);
 
                 var hKernel = Imports.GetModuleHandle("kernel32");
                 var pLoadLib = Imports.GetProcAddress(hKernel, "LoadLibraryW");
 
-                pExternLibPath = Imports.VirtualAllocEx(hTarget, IntPtr.Zero, libPathSize, AllocationType.Commit, MemoryProtection.ReadWrite);
+                //var hNtDll = Imports.GetModuleHandle("ntdll");
+                //var pZwCreateFile = Imports.GetProcAddress(hFsck, "ZwCreateFile");
 
-                int bytesWritten;
-                Imports.WriteProcessMemory(hTarget, pExternLibPath, pLibPath, libPathSize, out bytesWritten);
-
-                IntPtr hMod = CRTWithWait(hTarget, pLoadLib, pExternLibPath);
-                if (hMod == IntPtr.Zero)
-                    hMod = (from ProcessModule module in targetProc.Modules
-                            where module.ModuleName.Equals(payloadName)
-                            select module)
-                    .Single().BaseAddress;
-
-                var oHost = FindExportRVA(payload, export);
-                CRTWithWait(hTarget, hMod + (int)oHost, pExternLibPath);
-
-                return hMod;
+                return CRTWithWait(hProc, pLoadLib, pExternPayloadStr);
             }
             finally
             {
-                if (pLibPath != IntPtr.Zero)
-                    Marshal.FreeHGlobal(pLibPath);
-                Imports.VirtualFreeEx(hTarget, pExternLibPath, 0, AllocationType.Release);
+                if (pExternPayloadStr != IntPtr.Zero)
+                    FreeExternal(hProc, pExternPayloadStr);
             }
         }
 
-        static void Eject(IntPtr hTarget, IntPtr pLibBase)
+        private static void EjectInternal(IntPtr hProc, IntPtr hModule)
         {
             var hKernel = Imports.GetModuleHandle("kernel32");
             var pFreeLib = Imports.GetProcAddress(hKernel, "FreeLibrary");
-            CRTWithWait(hTarget, pFreeLib, pLibBase);
+            CRTWithWait(hProc, pFreeLib, hModule);
         }
 
-        static IntPtr CRTWithWait(IntPtr hProc, IntPtr pTarget, IntPtr pParam)
+        private static IntPtr CRTWithWait(IntPtr hProc, IntPtr pTarget, IntPtr pParam)
         {
             var hNewThread = IntPtr.Zero;
             try
@@ -106,11 +190,11 @@ namespace CacheOut
                 if (Imports.WaitForSingleObject(hNewThread, (uint)ThreadWaitValue.Infinite) != (uint)ThreadWaitValue.Object0)
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                IntPtr hModule;
-                if (!Imports.GetExitCodeThread(hNewThread, out hModule))
+                IntPtr exitCode;
+                if (!Imports.GetExitCodeThread(hNewThread, out exitCode))
                     throw new Win32Exception(Marshal.GetLastWin32Error());
 
-                return hModule;
+                return exitCode;
             }
             finally
             {
@@ -118,7 +202,7 @@ namespace CacheOut
             }
         }
 
-        static IntPtr FindExportRVA(string payload, string export)
+        private static IntPtr FindExportRVA(string payload, string export)
         {
             var hModule = IntPtr.Zero;
             try

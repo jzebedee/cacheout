@@ -27,15 +27,34 @@ namespace CacheOut
                         Console.WriteLine("File {0} is not an executable.", targetPath);
                     else
                     {
+                        var targetName = Path.GetFileName(targetPath);
+                        Console.WriteLine("Loading {0}", targetName);
+
                         var loader = new ProcessLoader(targetPath);
+
+                        Console.WriteLine("Launching {0} (suspended)", targetName);
                         loader.Launch(true);
-                        Injector.Inject(loader.Process, PAYLOAD_DLL, EXPORT_NAME);
-                        loader.Resume();
+
+                        Console.WriteLine("Injecting {0}", PAYLOAD_DLL);
+                        using (var inj = new Injector(loader.Process))
+                        {
+                            inj.Inject(PAYLOAD_DLL);
+                            Console.WriteLine("Injected");
+
+                            Console.WriteLine("Calling export {0}", EXPORT_NAME);
+                            var exitCode = inj.Call(PAYLOAD_DLL, EXPORT_NAME, "");
+                            Console.WriteLine("Done. Thread exit code is {0:x8}", exitCode);
+
+                            Console.WriteLine("Press any key to resume process");
+                            Console.ReadKey();
+                            loader.Resume();
+
+                            Console.WriteLine("Press any key to eject");
+                            Console.ReadKey();
+                        }
                     }
                 }
             }
-
-            Console.ReadKey();
         }
     }
 }

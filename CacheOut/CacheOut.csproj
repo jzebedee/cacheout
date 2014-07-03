@@ -79,12 +79,6 @@
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CachePayload\CachePayload.csproj">
-      <Project>{96236721-f2d7-4587-afa0-d30c8c1e21af}</Project>
-      <Name>CachePayload</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
