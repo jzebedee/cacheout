@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace CacheOut.Win32
+namespace Win32Helper
 {
     /// <summary>
     /// IMAGE_DOS_HEADER struct taken from pinvoke.net. Represents Dos Header in a module image
@@ -172,5 +172,44 @@ namespace CacheOut.Win32
         public IntPtr hThread;
         public int dwProcessId;
         public int dwThreadId;
+    }
+
+    //typedef struct _OBJECT_ATTRIBUTES {
+    //  ULONG Length;
+    //  HANDLE RootDirectory;
+    //  PUNICODE_STRING ObjectName; &lt;= Yawn :]
+    //  ULONG Attributes;
+    //  PVOID SecurityDescriptor;
+    //  PVOID SecurityQualityOfService;
+    //} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+    //typedef CONST OBJECT_ATTRIBUTES *PCOBJECT_ATTRIBUTES;
+    [StructLayout(LayoutKind.Sequential)]
+    struct OBJECT_ATTRIBUTES
+    {
+        uint Length;
+        IntPtr RootDirectory;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        string ObjectName;
+        uint Attributes;
+        IntPtr SecurityDescriptor;
+        IntPtr SecurityQualityOfService;
+    }
+
+    //typedef struct _IO_STATUS_BLOCK {
+    //  union {
+    //    NTSTATUS Status;
+    //    PVOID    Pointer;
+    //  };
+    //  ULONG_PTR Information;
+    //} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+    [StructLayout(LayoutKind.Explicit)]
+    struct IO_STATUS_BLOCK
+    {
+        [FieldOffset(0)]
+        IntPtr Status;
+        [FieldOffset(0)]
+        IntPtr Pointer;
+        [FieldOffset(4)]
+        UIntPtr Information;
     }
 }

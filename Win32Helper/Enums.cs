@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CacheOut.Win32
+namespace Win32Helper
 {
     /// <summary>
     /// Memory allocation type - taken from #defines in WinNT.h

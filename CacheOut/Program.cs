@@ -41,9 +41,9 @@ namespace CacheOut
                             inj.Inject(PAYLOAD_DLL);
                             Console.WriteLine("Injected");
 
-                            Console.WriteLine("Calling export {0}", EXPORT_NAME);
-                            var exitCode = inj.Call(PAYLOAD_DLL, EXPORT_NAME, "");
-                            Console.WriteLine("Done. Thread exit code is {0:x8}", exitCode);
+                            //CallExport(inj, "AttachDebugger");
+                            CallExport(inj, "SetPath", AppDomain.CurrentDomain.BaseDirectory);
+                            CallExport(inj, EXPORT_NAME);
 
                             Console.WriteLine("Press any key to resume process");
                             Console.ReadKey();
@@ -55,6 +55,16 @@ namespace CacheOut
                     }
                 }
             }
+        }
+
+        private static void CallExport(Injector inj, string t, string arg = "")
+        {
+            Console.WriteLine("Calling export {0}", t);
+            var exitCode = inj.Call(PAYLOAD_DLL, t, arg);
+            Console.WriteLine("Done. Thread exit code is {0:x8}", exitCode);
+
+            Console.WriteLine("Press any key to continue.");
+            Console.ReadKey();
         }
     }
 }

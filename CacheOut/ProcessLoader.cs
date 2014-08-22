@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using CacheOut.Win32;
+using Win32Helper;
 
 namespace CacheOut
 {

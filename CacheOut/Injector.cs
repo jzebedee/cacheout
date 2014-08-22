@@ -7,7 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.ComponentModel;
-using CacheOut.Win32;
+using Win32Helper;
 
 namespace CacheOut
 {
@@ -161,9 +161,6 @@ namespace CacheOut
 
                 var hKernel = Imports.GetModuleHandle("kernel32");
                 var pLoadLib = Imports.GetProcAddress(hKernel, "LoadLibraryW");
-
-                //var hNtDll = Imports.GetModuleHandle("ntdll");
-                //var pZwCreateFile = Imports.GetProcAddress(hFsck, "ZwCreateFile");
 
                 return CRTWithWait(hProc, pLoadLib, pExternPayloadStr);
             }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace CacheOut.Win32
+namespace Win32Helper
 {
     /// <summary>
     /// Static class containing all Win32 Import functions
@@ -243,6 +243,20 @@ namespace CacheOut.Win32
             AllocationType dwFreeType);
 
         /// <summary>
+        /// </summary>
+        /// <param name="lpAddress">The lp address.</param>
+        /// <param name="dwSize">Size of the dw.</param>
+        /// <param name="flNewProtect">The fl new protect.</param>
+        /// <param name="lpflOldProtect">The LPFL old protect.</param>
+        [DllImport("kernel32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool VirtualProtect(
+            IntPtr lpAddress,
+            int dwSize,
+            [MarshalAs(UnmanagedType.U4)]MemoryProtection flNewProtect,
+            [MarshalAs(UnmanagedType.U4)]out MemoryProtection lpflOldProtect);
+
+        /// <summary>
         /// Reads data from an area of memory in the specified process.
         /// </summary>
         /// <param name="hProcess">Handle to the process from which the memory is being read. 
@@ -318,6 +332,11 @@ namespace CacheOut.Win32
             uint nSize,
             out int lpNumberOfBytesWritten);
 
+        #endregion
+
+        #region Debug
+        [DllImport("user32", CharSet = CharSet.Auto)]
+        public static extern uint MessageBox(IntPtr hWnd, string text, string caption, int options);
         #endregion
     }
 }
