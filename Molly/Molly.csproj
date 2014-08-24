@@ -66,7 +66,7 @@
     <Compile Include="Detour.cs" />
     <None Include="DetourManager.cs" />
     <Compile Include="Memory.cs" />
-    <Compile Include="MemoryEdit.cs" />
+    <Compile Include="IMemoryEdit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
