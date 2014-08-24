@@ -45,6 +45,16 @@ namespace CachePayload
             BasePath = path;
         }
 
+        [DllExport]
+        public static void Dump([MarshalAs(UnmanagedType.LPWStr)]string dummy)
+        {
+            HookManager.Stop();
+            using (var fstream = File.OpenWrite(dummy))
+            {
+                //new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter().Serialize(fstream, );
+            }
+        }
+
         static Assembly PathedAssemblyResolve(object sender, ResolveEventArgs args)
         {
             var name = Path.ChangeExtension(args.Name.Substring(0, args.Name.IndexOf(',')), "dll");

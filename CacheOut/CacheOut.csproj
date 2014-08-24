@@ -82,6 +82,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Molly\Molly.csproj">
+      <Project>{cd587e33-fb38-4a55-b901-1daf5b2b12ec}</Project>
+      <Name>Molly</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Win32Helper\Win32Helper.csproj">
       <Project>{72aecde1-f52a-447d-ae90-1b8984dde360}</Project>
       <Name>Win32Helper</Name>

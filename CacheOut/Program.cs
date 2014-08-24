@@ -49,6 +49,17 @@ namespace CacheOut
                             Console.ReadKey();
                             loader.Resume();
 
+                            Console.ReadKey();
+                            var tmp = Path.GetTempFileName();
+                            CallExport(inj, "Dump", tmp);
+
+                            using (var fstream = File.OpenRead(tmp))
+                            {
+                                var bf = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                                var x = bf.Deserialize(fstream) as System.Collections.Concurrent.ConcurrentQueue<System.Collections.ArrayList>;
+                                Console.WriteLine(x);
+                            }
+
                             Console.WriteLine("Press any key to eject");
                             Console.ReadKey();
                         }
