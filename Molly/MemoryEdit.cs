@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Win32Helper;
 
-namespace CachePayload
+namespace Molly
 {
+    interface IMemoryEdit : IDisposable
+    {
+    }
 }
